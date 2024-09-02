@@ -55,10 +55,8 @@ class init_bell:
         self.counter = 0.8 #counterweight as proportion of weight on right side. Affects natural frequency of the swing
         self.stay_limit = 10.0  #currently doesn't do anything
         self.garter_hole = np.pi/4  #position of the garter hole relative to the stay
-
+        
         self.angle = init_angle
-        self.img_init = pygame.image.load('bell.png')
-        self.img = pygame.transform.scale(self.img_init, (2*self.radius*phy.xscale, 2*self.radius*phy.yscale))
         self.c_x, self.c_y = 0.0, self.com
         self.accel = 0.0   #angular acceleration in radians/s^2
         self.velocity = 0.0   #angular velocity in radians/s
@@ -72,10 +70,9 @@ class init_bell:
         self.prev_angle = init_angle #previous maximum angle
         self.max_length = 0.0   #max backstroke length
         
-        self.rlength, self.rforce = self.ropelength()
-        self.rlengths = []; self.rforces = []
+        self.rlength, self.effect_force = self.ropelength()
+        self.rlengths = []; self.effect_forces = []
 
-        self.sound = pygame.mixer.Sound('bellsound.wav')
 
     def timestep(self, phy):
         #Do the timestep here, using only bell.force, which comes either from an input or the machine
@@ -99,15 +96,11 @@ class init_bell:
             self.velocity = -0.7*self.velocity
             self.angle = -2*np.pi - 2*self.stay_angle - self.angle
 
-        #Check for sound
-        if abs(self.angle) > self.sound_angle and abs(self.prev_angle) <= self.sound_angle:
-            self.sound.play()
-
-        self.rlength, self.rforce = self.ropelength()
-        self.rlengths.append(self.rlength); self.rforces.append(self.rforce)
+        self.rlength, self.effect_force = self.ropelength()
+        self.rlengths.append(self.rlength); self.effect_forces.append(self.effect_force)
 
         if len(self.rlengths) > 3: #Maximum height of previous backstroke. To allow for adjustment of tail end length.
-            if self.rforce > 0.0 and self.rlengths[-1] < self.rlengths[-2] and self.rlengths[-2] > self.rlengths[-3]:
+            if self.effect_force > 0.0 and self.rlengths[-1] < self.rlengths[-2] and self.rlengths[-2] > self.rlengths[-3]:
                 self.max_length = self.rlengths[-1]
         
     def ropelength(self):
@@ -118,11 +111,11 @@ class init_bell:
         if hole_angle > 0.0:
             #Fully Handstroke
             length = self.radius*hole_angle + self.radius
-            rforce = -1.0
+            effect_force = -1.0
         elif hole_angle <= -np.pi/2:
             #Fully backstroke
             length = self.radius*(-np.pi/2 - hole_angle) + self.radius
-            rforce = 1.0
+            effect_force = 1.0
         else:
             #Somewhere in between 
             xpos = self.radius + self.radius*np.sin(hole_angle)
@@ -131,7 +124,7 @@ class init_bell:
             vec2 = np.array([np.cos(hole_angle), np.sin(hole_angle)])
             vec1  = vec1/np.linalg.norm(vec1); vec2  = vec2/np.linalg.norm(vec2);
             length = np.sqrt(xpos**2 + ypos**2)
-            rforce = -np.dot(vec1,vec2)
+            effect_force = -np.dot(vec1,vec2)
                     
-        return length, rforce
+        return length, effect_force
         

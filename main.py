@@ -22,6 +22,10 @@ pygame.init()
 phy = init_physics()
 bell = init_bell(phy, 0.0)
 
+bell.img_init = pygame.image.load('bell.png')
+bell.sound = pygame.mixer.Sound('bellsound.wav')
+bell.img = pygame.transform.scale(bell.img_init, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
+
 # set up the window
 DISPLAYSURF = pygame.display.set_mode((phy.pixels_x, phy.pixels_y), 0, 32)
 pygame.display.set_caption('Animation')
@@ -37,9 +41,6 @@ async def main():
 
     force = 6.0 
 
-    rlengths = []; rforces = []
-    count = 0
-
     while True: # the main game loop
         DISPLAYSURF.fill(WHITE)
         
@@ -50,7 +51,7 @@ async def main():
         
         #Display 'handstroke' or 'backstroke'
         fontObj = pygame.font.Font('freesansbold.ttf', 32)
-        if bell.rforce < 0.0:
+        if bell.effect_force < 0.0:
             textSurfaceObj = fontObj.render('Handstroke', True, BLACK, WHITE)
         elif bell.rlength > bell.max_length - bell.backstroke_pull:
             textSurfaceObj = fontObj.render('Backstroke', True, BLACK, WHITE)
@@ -68,17 +69,20 @@ async def main():
         phy.draw_point(DISPLAYSURF, bell.c_x, bell.c_y,GREEN)
     
         phy.draw_point(DISPLAYSURF, 0,0,RED)
-    
+        #Check for sound
+        if abs(bell.angle) > bell.sound_angle and abs(bell.prev_angle) <= bell.sound_angle:
+            bell.sound.play()
+
         #Check for force on wheel - this takes effect at the next timestep
         press_keys = pygame.key.get_pressed()
         press_mouse = pygame.mouse.get_pressed()
             
         if press_keys[pygame.K_SPACE] or press_mouse[0]:
-            if bell.rforce < 0.0:   #Can pull the entire handstroke
-                bell.force = bell.rforce*force
+            if bell.effect_force < 0.0:   #Can pull the entire handstroke
+                bell.force = bell.effect_force*force
             else:           #Can only pull some of the backstroke
                 if bell.rlength > bell.max_length - bell.backstroke_pull:
-                    bell.force = bell.rforce*force
+                    bell.force = bell.effect_force*force
                 else:
                     bell.force = 0.0
         else:
