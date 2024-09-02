@@ -19,17 +19,18 @@ from bell_physics import init_bell, init_physics
 #### ML PARAMETERS HERE
  
 nlayers = 1     #number of hidden layers
-nnodes = [10]     #nuber of nodes in the first layer. As a list in case more are added
+nnodes = 1     #nuber of nodes in the first layer. As a list in case more are added
 ninputs = 2    #initially just the angle and velocity of the bell. Will add more if necessary
 
-nweights = [ninputs*nnodes[0]]
-nbiases = [ninputs*nnodes[0]]
+nweights = [ninputs*nnodes]
+nbiases = [ninputs*nnodes]
 for layer in range(nlayers-1):
-    nweights.append(nnodes[layer]*nnodes[layer+1])
-    nbiases.append(nnodes[layer]*nnodes[layer+1])
-nweights.append(nnodes[-1])
-nbiases.append(nnodes[-1])
+    nweights.append(nnodes[layer]*nnodes)
+    nbiases.append(nnodes[layer]*nnodes)
+nweights.append(nnodes)
+nbiases.append(nnodes)
     
+dof = sum(nweights)
 print('Total degrees of freedom in network:', sum(nweights) + sum(nbiases))
 
 def sigmoid(x):
@@ -39,48 +40,61 @@ def sigmoid(x):
 def cost_fn(phy, bell, angles, velocities):
     #Calculates the cost function for th an individual run.
     ncounts = int(5.0*phy.FPS)   #range to consider
-    cfs = []
+    ccount = 0
+    cf = 0
     for i in range(0, len(angles) - ncounts):
-        cfs.append((np.pi + bell.stay_angle - np.max(angles[i:i+ncounts]))**2)
-    return np.sum(cfs)/len(cfs)
+        cf += (np.pi - abs(angles[i]))**2
+        ccount += 1
+    return cf/ccount
 
-def init_network(max_weight = 1.0):
+def init_network(max_weight = 2.0):
     #Max weights as 1/(root(nodes)) was recommended at some point. That seems reasonable.
     #Initial biases at zero is probably fine
     weights = []
     biases = []
-    for layer in range(nlayers + 1):
-        weights.append([])
-        biases.append([])
-        for i in range(nweights[layer]):
-            weights[-1].append(0.0)
-            biases[-1].append(0.0)
-           
-    for group in range(len(nweights)):
-        max_weight = 1/np.sqrt(nweights[group])
-        for i in range(nweights[group]):
-            weights[group][i] = 2*max_weight*(random.random() - 0.5)
-            biases[group][i] = 0.0
-        
-    print('Network initialised with random values')
+    weights = np.zeros(dof)
+    biases = np.zeros(dof)
+    
+    # Map to the hidden layer
+    for n in range(ninputs):
+        for i in range(nnodes):
+            #weights[i + n*nnodes] = 2*max_weight*(random.random() - 0.5)
+            #biases[i + n*nnodes] = 2*max_weight*(random.random() - 0.5)
+            weights[i + n*nnodes] = 0.0
+            biases[i + n*nnodes] = 0.0
+    weights[nnodes] = 1.0
+    biases[nnodes] = 0.0
+
+    # Map to the end
+    for i in range(nnodes):
+        #weights[i + ninputs*nnodes] = 2*max_weight*(random.random() - 0.5)
+        #biases[i + ninputs*nnodes] = 2*max_weight*(random.random() - 0.5)
+        weights[i + ninputs*nnodes] = 0.0
+        biases[i + ninputs*nnodes] = 0.0
+
+    weights[ninputs*nnodes] = 1.0
+    biases[ninputs*nnodes] = 0.5 
+
+    print('Network initialised')
     return weights, biases
 
 def find_force(phy, bell, weights, biases):
     #Given the current state of the network, find the force to pull with. The essence of the forward problem.
     data = [bell.angle, bell.velocity]
-    nodes = np.zeros(nnodes[0])
-    for i in range(nnodes[0]):
+    nodes = np.zeros(nnodes)
+    #Find neuron values
+    for i in range(nnodes):
         nodesum = 0
-        for j in range(ninputs):
-            nodesum += weights[0][i + j*nnodes[0]]*data[j] + biases[0][i + j*nnodes[0]]
+        for n in range(ninputs):
+            nodesum += data[n]*weights[i + n*nnodes] + biases[i + n*nnodes]
         nodes[i] = sigmoid(nodesum)
-        
-    for i in range(nnodes[0]):
+      
+    for i in range(nnodes):
         outsum = 0
-        outsum += weights[1][i]*nodes[i] + biases[1][i]
+        outsum += weights[i + ninputs*nnodes]*nodes[i] + biases[i + ninputs*nnodes]
         
     out = sigmoid(outsum)
-    
+
     #Out is the probability of pulling    
     if random.random() < out:
         return 1.0
@@ -92,54 +106,62 @@ def gradient(weights, biases, fn):
     #Calculates the gradient of the cost function at the current state of the weights and biases/
     #Acheives this by performing several runs
     print('Calculating gradient...')
-    for run_count in range(1):  #only one run per gradient to start with? Obviously can'to do that
+    for run_count in range(1):  #only one run per gradient to start with? Obviously can't do that
         phy = init_physics()
         bell = init_bell(phy, 0.0)
         angles, velocities = run(phy, bell, find_force, weights, biases)
     #U this data calculate a gradient function.
     cf = cost_fn(phy, bell, angles, velocities)
-    plt.plot(angles)
-    plt.show()
+    #plt.plot(angles)
+    #plt.show()
     print('Initial cost function', cf)
     delta = 0.01
-    eta = 0.0005
-    for i in range(len(weights)):
-        for j in range(len(weights[i])):
-            weights[i][j] = weights[i][j] + delta
-            bell = init_bell(phy, 0.0)
-            angles, velocities = run(phy, bell, find_force, weights, biases)
-            cf1 = cost_fn(phy, bell, angles, velocities)
+    eta = 0.5
+    
+    grad_w = np.zeros(dof)
+    grad_b = np.zeros(dof)
+    
+    for k in range(len(weights)):
+        weights[k] = weights[k] + delta
+        bell = init_bell(phy, 0.0)
+        angles, velocities = run(phy, bell, find_force, weights, biases)
+        cf1 = cost_fn(phy, bell, angles, velocities)
             
-            weights[i][j] = weights[i][j] - 2*delta
-            bell = init_bell(phy, 0.0)
-            angles, velocities = run(phy, bell, find_force, weights, biases)
-            cf2 = cost_fn(phy, bell, angles, velocities)
+        weights[k] = weights[k] - 2*delta
+        bell = init_bell(phy, 0.0)
+        angles, velocities = run(phy, bell, find_force, weights, biases)
+        cf2 = cost_fn(phy, bell, angles, velocities)
 
-            weights[i][j] = weights[i][j] + delta   #return to its original value
+        weights[k] = weights[k] + delta   #return to its original value
+        
+        grad_w[k] = (cf1 - cf2)
             
-            weights[i][j] = weights[i][j] - eta*(cf1 - cf2)/(2*delta)
+    for k in range(len(biases)):
+        biases[k] = biases[k] + delta
+        bell = init_bell(phy, 0.0)
+        angles, velocities = run(phy, bell, find_force, weights, biases)
+        cf1 = cost_fn(phy, bell, angles, velocities)
             
-    for i in range(len(biases)):
-        for j in range(len(biases[i])):
-            biases[i][j] = biases[i][j] + delta
-            bell = init_bell(phy, 0.0)
-            angles, velocities = run(phy, bell, find_force, weights, biases)
-            cf1 = cost_fn(phy, bell, angles, velocities)
-            
-            biases[i][j] = biases[i][j] - 2*delta
-            bell = init_bell(phy, 0.0)
-            angles, velocities = run(phy, bell, find_force, weights, biases)
-            cf2 = cost_fn(phy, bell, angles, velocities)
+        biases[k] = biases[k] - 2*delta
+        bell = init_bell(phy, 0.0)
+        angles, velocities = run(phy, bell, find_force, weights, biases)
+        cf2 = cost_fn(phy, bell, angles, velocities)
 
-            biases[i][j] = biases[i][j] + delta   #return to its original value
-            biases[i][j] = biases[i][j] - eta*(cf1 - cf2)/(2*delta)
-     
+        biases[k] = biases[k] + delta   #return to its original value
+        
+        grad_b[k] = (cf1 - cf2)
 
-    plt.plot(weights[0])
-    plt.plot(biases[0])
+    weights = weights - eta*grad_w
+    #biases = biases - eta*grad_b
+    
+    plt.ylim(-2,2)
+    plt.plot(weights)
+    plt.plot(biases)
     plt.show()
      
 weights, biases = init_network()
+
+#gradient(weights, biases, cost_fn)
 
 while True:
     gradient(weights, biases, cost_fn)
