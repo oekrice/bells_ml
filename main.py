@@ -6,7 +6,7 @@ Created on Thu Aug 29 10:03:56 2024
 """
 
 import asyncio
-#import nest_asyncio
+import nest_asyncio
 
 import pygame, sys
 from pygame.locals import *
@@ -14,7 +14,7 @@ import numpy as np
 
 from bell_physics import init_bell, init_physics
       
-if False:
+if True:
     nest_asyncio.apply()
 
 pygame.init()
@@ -33,13 +33,14 @@ pygame.display.set_caption('Animation')
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
 BLACK = (0,0,0)
 
 async def main():
     
     fpsClock = pygame.time.Clock()
 
-    force = 6.0 
+    wheel_force = 7.5 
 
     while True: # the main game loop
         DISPLAYSURF.fill(WHITE)
@@ -59,18 +60,22 @@ async def main():
             textSurfaceObj = fontObj.render('', True, BLACK, WHITE)
         textRectObj = textSurfaceObj.get_rect()
         textRectObj.center = (800,500)
-
-        bell.c_x, bell.c_y = -bell.com*np.sin(bell.angle), bell.com*np.cos(bell.angle)
-        img_plot, (x_box, y_box) = phy.rotate(bell.img, bell.angle)
+        
+        img_plot, (x_box, y_box) = phy.rotate(bell.img, bell.bell_angle)
         
         DISPLAYSURF.blit(img_plot, (phy.pix(x_box,y_box)))
         DISPLAYSURF.blit(textSurfaceObj, textRectObj)
     
         phy.draw_point(DISPLAYSURF, bell.c_x, bell.c_y,GREEN)
     
+        phy.draw_point(DISPLAYSURF, bell.cl_x, bell.cl_y,BLUE)
+
+        phy.draw_point(DISPLAYSURF, bell.p_x, bell.p_y,BLUE)
+
         phy.draw_point(DISPLAYSURF, 0,0,RED)
         #Check for sound
-        if abs(bell.angle) > bell.sound_angle and abs(bell.prev_angle) <= bell.sound_angle:
+        if bell.ding == True:
+        #if abs(bell.bell_angle) > bell.sound_angle and abs(bell.prev_angle) <= bell.sound_angle:
             bell.sound.play()
 
         #Check for force on wheel - this takes effect at the next timestep
@@ -79,14 +84,14 @@ async def main():
             
         if press_keys[pygame.K_SPACE] or press_mouse[0]:
             if bell.effect_force < 0.0:   #Can pull the entire handstroke
-                bell.force = bell.effect_force*force
+                bell.wheel_force = bell.effect_force*wheel_force
             else:           #Can only pull some of the backstroke
                 if bell.rlength > bell.max_length - bell.backstroke_pull:
-                    bell.force = bell.effect_force*force
+                    bell.wheel_force = bell.effect_force*wheel_force
                 else:
-                    bell.force = 0.0
+                    bell.wheel_force = 0.0
         else:
-            bell.force = 0.0
+            bell.wheel_force = 0.0
             
         #Check for quit
         for event in pygame.event.get():
