@@ -64,7 +64,7 @@ class init_bell:
         self.clapper_mass = 0.05*self.mass   # mass of clapper (proportionally to the bell I suppose)
         self.clapper_limit = 0.5   #maximum clapper angle  (will need tweaking)
         self.clapper_pivot = 0.1*self.com_1 #distance of pivot point from the centre of the bell
-        self.clapper_length = 0.5*self.radius  #clapper length
+        self.clapper_length = 0.575*self.radius  #clapper length
         self.clapper_velocity = 0.0  #clapper angular velocity
         self.onedge = False
         self.ding = False; self.ding_reset = True
@@ -81,7 +81,7 @@ class init_bell:
         self.velocity = 0.0   #angular velocity in radians/s
 
         self.wheel_force = 0.0  #force on the bell wheel (as in, rope pull)
-        self.stay_angle = 0.15 #how far over the top can the bell go (elastic collision)
+        self.stay_angle = 0.2 #how far over the top can the bell go (elastic collision)
         self.friction = 0.1 #friction parameter in arbitrary units
         self.backstroke_pull = 1.0   #length of backstroke pull in metres
         
