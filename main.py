@@ -20,9 +20,10 @@ if True:
 pygame.init()
 
 phy = init_physics()
-bell = init_bell(phy, 0.0)
+bell = init_bell(phy, np.pi+0.05)
 
-bell.img_init = pygame.image.load('bell.png')
+bell.img_init = pygame.image.load('all.png')
+
 bell.sound = pygame.mixer.Sound('bellsound.wav')
 bell.img = pygame.transform.scale(bell.img_init, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
 
@@ -40,7 +41,7 @@ async def main():
     
     fpsClock = pygame.time.Clock()
 
-    wheel_force = 7.5 
+    wheel_force = 7.5
 
     while True: # the main game loop
         DISPLAYSURF.fill(WHITE)
@@ -61,6 +62,22 @@ async def main():
         textRectObj = textSurfaceObj.get_rect()
         textRectObj.center = (800,500)
         
+        wheelimg = pygame.image.load('wheel.png')
+        clapperimg = pygame.image.load('clapper.png')
+        bellimg = pygame.image.load('justbell.png')
+
+        merge = wheelimg.copy()
+        merge.blit(clapperimg, (0, 0))
+        merge.blit(bellimg, (0, 0))
+
+        bell.img_init = merge
+        clapper_rotate, (x_box, y_box)  = phy.rotate(clapperimg, bell.clapper_angle)
+        
+        merge = wheelimg.copy()
+        merge.blit(clapperimg, (0, 0))
+        merge.blit(bellimg, (0, 0))
+
+
         img_plot, (x_box, y_box) = phy.rotate(bell.img, bell.bell_angle)
         
         DISPLAYSURF.blit(img_plot, (phy.pix(x_box,y_box)))

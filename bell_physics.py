@@ -53,18 +53,18 @@ class init_bell:
         
         
         self.radius = 0.5    #radius of wheel (in m)
-        self.counter = 0.1 #counterweight as proportion of weight on right side. Affects natural frequency of the swing
+        self.counter = 0.15 #counterweight as proportion of weight on right side. Affects natural frequency of the swing
         self.garter_hole = np.pi/4  #position of the garter hole relative to the stay
         
-        self.com_1 = -0.4*self.radius   #point at which gravity acts in the correct direction
+        self.com_1 = -0.6*self.radius   #point at which gravity acts in the correct direction
         self.com_2 = -self.com_1    #point at which gravity acts in the counterweight direction
                 #This is sort of arbirtrary given you can adjust the proportions, and I'll leave it as that        
         
-        self.clapper_angle = 0.0  #Angle of clapper RELATIVE to the bell
+        self.clapper_angle = 0.1  #Angle of clapper RELATIVE to the bell
         self.clapper_mass = 0.05*self.mass   # mass of clapper (proportionally to the bell I suppose)
         self.clapper_limit = 0.5   #maximum clapper angle  (will need tweaking)
         self.clapper_pivot = 0.1*self.com_1 #distance of pivot point from the centre of the bell
-        self.clapper_length = 0.575*self.radius  #clapper length
+        self.clapper_length = 0.3*self.radius  #clapper length
         self.clapper_velocity = 0.0  #clapper angular velocity
         self.onedge = False
         self.ding = False; self.ding_reset = True
@@ -81,7 +81,7 @@ class init_bell:
         self.velocity = 0.0   #angular velocity in radians/s
 
         self.wheel_force = 0.0  #force on the bell wheel (as in, rope pull)
-        self.stay_angle = 0.2 #how far over the top can the bell go (elastic collision)
+        self.stay_angle = 0.15 #how far over the top can the bell go (elastic collision)
         self.friction = 0.1 #friction parameter in arbitrary units
         self.backstroke_pull = 1.0   #length of backstroke pull in metres
         
@@ -106,10 +106,11 @@ class init_bell:
         self.force = self.force + self.p_x*phy.g*self.clapper_mass
         
         #Angular cceleration due to gravity 
-        if self.onedge:   #depends on whether the clapper is currently resting on the side of the bell
-            self.accel = self.force/(abs(self.com_1*self.m1) + abs(self.com_2*self.m2) + abs((self.clapper_pivot+self.clapper_length)*self.clapper_mass))
-        else:
-            self.accel = self.force/(abs(self.com_1*self.m1) + abs(self.com_2*self.m2))
+        #if self.onedge:   #depends on whether the clapper is currently resting on the side of the bell
+         #   self.accel = self.force/(abs(self.com_1*self.m1) + abs(self.com_2*self.m2) + abs((self.clapper_pivot+self.clapper_length)*self.clapper_mass))
+        #else:
+        
+        self.accel = self.force/(abs(self.com_1*self.m1) + abs(self.com_2*self.m2))
 
         #Acceleration on the wheel
         self.accel = self.accel + self.wheel_force*self.radius/(abs(self.com_1*self.m1) + abs(self.com_2*self.m2))
@@ -126,7 +127,7 @@ class init_bell:
         #raw_angle = np.arctan2(self.cl_x - self.p_x, self.cl_y - self.p_y)
         #Add gravity moment from clapper (mass is irrelevant as it cancels out)
         cl_force = phy.g*(self.cl_x - self.p_x)/self.clapper_length
-        cl_force = cl_force - 1.0*self.clapper_velocity*self.friction
+        cl_force = cl_force - 0.4*self.clapper_velocity*self.friction
         self.clapper_velocity = self.clapper_velocity + cl_force*phy.dt - self.accel*phy.dt   #this is RELATIVE to the bell
         
         
