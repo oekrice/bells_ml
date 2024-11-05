@@ -12,15 +12,15 @@ To edit:
 Load anaconda prompt, the environment and navigate to the correct folder. Get updates from GitHub in case
 
 ```
-  $> activate bells
-  $> cd \Users\eleph\OneDrive\Documents\bells\bells_ml
-  $> git pull
+activate bells
+cd \Users\eleph\OneDrive\Documents\bells\bells_ml
+git pull
 ```
 
 For a test run, in main.py ensure the correct asyncio is applied:
 ```
-  $> import nest_asyncio
-  $> nest_asyncio.apply()
+import nest_asyncio
+nest_asyncio.apply()
 ```
 (Remove these to make it work in the browser, I'm pretty sure). 
 
@@ -30,13 +30,13 @@ To compile for exporting to the browser:
 
 Remove the lines of code about nest_asyncio (above) then navigate to the folder above and run pygbag
 ```
-  $> pip install pygbag
-  $> cd \Users\eleph\OneDrive\Documents\bells\
-  $> pygbag bells_ml
+pip install pygbag
+cd \Users\eleph\OneDrive\Documents\bells\
+pygbag bells_ml
 ```
 Then navigate to 
 ```
-  $> localhost:8000
+localhost:8000
 ```
 to test.
 
