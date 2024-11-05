@@ -6,7 +6,7 @@ Created on Thu Aug 29 10:03:56 2024
 """
 
 import asyncio
-import nest_asyncio
+#import nest_asyncio
 
 import pygame, sys
 from pygame.locals import *
@@ -14,17 +14,17 @@ import numpy as np
 
 from bell_physics import init_bell, init_physics
       
-if True:
+if False:
     nest_asyncio.apply()
 
 pygame.init()
 
 phy = init_physics()
-bell = init_bell(phy, 0.0)
+bell = init_bell(phy, np.pi+0.05)
 
 bell.img_init = pygame.image.load('bell.png')
 
-bell.sound = pygame.mixer.Sound('bellsound.wav')
+bell.sound = pygame.mixer.Sound('bellsound_deep.wav')
 bell.img = pygame.transform.scale(bell.img_init, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
 
 #Import images and transform scales
@@ -84,20 +84,21 @@ async def main():
         clapper_rot, (x_box, y_box) = phy.rotate(justbellimg, bell.bell_angle)
         DISPLAYSURF.blit(clapper_rot, (phy.pix(x_box,y_box)))
         
+        #Display helpful blobs
+        
         DISPLAYSURF.blit(textSurfaceObj, textRectObj)
     
-        phy.draw_point(DISPLAYSURF, bell.c_x, bell.c_y,GREEN)
+        #phy.draw_point(DISPLAYSURF, bell.c_x, bell.c_y,GREEN)
     
-        phy.draw_point(DISPLAYSURF, bell.cl_x, bell.cl_y,BLUE)
+        #phy.draw_point(DISPLAYSURF, bell.cl_x, bell.cl_y,BLUE)
 
-        phy.draw_point(DISPLAYSURF, bell.p_x, bell.p_y,BLUE)
+        #phy.draw_point(DISPLAYSURF, bell.p_x, bell.p_y,BLUE)
 
-        phy.draw_point(DISPLAYSURF, 0,0,RED)
+        #phy.draw_point(DISPLAYSURF, 0,0,RED)
         #Check for sound
         if bell.ding == True:
         #if abs(bell.bell_angle) > bell.sound_angle and abs(bell.prev_angle) <= bell.sound_angle:
             bell.sound.play()
-
         #Check for force on wheel - this takes effect at the next timestep
         press_keys = pygame.key.get_pressed()
         press_mouse = pygame.mouse.get_pressed()

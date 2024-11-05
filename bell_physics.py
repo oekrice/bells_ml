@@ -16,7 +16,7 @@ class init_physics:
     def __init__(self):
         self.pixels_x = 1000
         self.pixels_y = 600
-        self.FPS = 60
+        self.FPS = 45
         self.g = -9.8 #Gravitational acceleration
         self.x1 = 2 #width of domain in 'metres'
         self.y1 = self.x1 * self.pixels_y/self.pixels_x
@@ -72,6 +72,7 @@ class init_bell:
         self.clapper_velocity = 0.0  #clapper angular velocity
         self.onedge = False
         self.ding = False; self.ding_reset = True
+        self.ding_time = 0.0
         
         self.m1 = self.mass/(1.0 + self.counter)   #mass through right-side position
         self.m2 = self.mass - self.m1   #mass through wrong-side position
@@ -96,6 +97,7 @@ class init_bell:
         self.rlength, self.effect_force = self.ropelength()
         self.rlengths = []; self.effect_forces = []
 
+        self.volume = 0.0
 
     def timestep(self, phy):
         #Do the timestep here, using only bell.force, which comes either from an input or the machine
@@ -158,10 +160,17 @@ class init_bell:
         else:
             self.onedge = False
         if self.onedge and self.ding_reset:
+            self.sound.set_volume(20*abs(self.clapper_velocity)**2)
             self.ding = True
             self.ding_reset = False
+            self.ding_time = phy.game_time
+
         else:
             self.ding = False
+            
+        if abs(self.clapper_angle) > self.clapper_limit - 0.05 and (phy.game_time - self.ding_time) > 0.05:
+            self.sound.set_volume(np.exp(-5e-6*phy.dt)*self.sound.get_volume())
+
         if abs(self.clapper_angle) < self.clapper_limit - 0.1:
             self.ding_reset = True
             
@@ -181,7 +190,7 @@ class init_bell:
         #Adjust time step to match reality
         dt = time.time() - phy.time_reference  
         phy.time_reference = time.time()
-        phy.dt = dt
+        phy.dt = min(dt, 0.1)
         
     def ropelength(self):
         #Outputs the length of the rope above the garter hole, relative to the minimum.
