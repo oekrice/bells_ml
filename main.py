@@ -62,7 +62,7 @@ async def main():
         #DISPLAY THINGS
         
         #Display 'handstroke' or 'backstroke'
-        fontObj = pygame.font.Font('freesansbold.ttf', 32)
+        fontObj = pygame.font.Font('freesansbold.ttf', 16)
         if bell.effect_force < 0.0:
             textSurfaceObj = fontObj.render('Handstroke', True, BLACK, WHITE)
         elif bell.rlength > bell.max_length - bell.backstroke_pull:
@@ -70,9 +70,18 @@ async def main():
         else:
             textSurfaceObj = fontObj.render('', True, BLACK, WHITE)
         textRectObj = textSurfaceObj.get_rect()
-        textRectObj.center = (800,500)
+        textRectObj.center = (0.8*phy.pixels_x,0.8*phy.pixels_y)
         
-    
+        DISPLAYSURF.blit(textSurfaceObj, textRectObj)
+
+        #fontObj = pygame.font.Font('freesansbold.ttf', 16)
+        #textSurfaceObj = fontObj.render(str(bell.sound.get_volume()), True, BLACK, WHITE)
+        #textRectObj = textSurfaceObj.get_rect()
+        #textRectObj.center = (0.2*phy.pixels_x,0.2*phy.pixels_y)
+
+
+        DISPLAYSURF.blit(textSurfaceObj, textRectObj)
+
         #Rotate clapper relative to the bell and paste
         
         wheel_rot, (x_box, y_box) = phy.rotate(wheelimg, bell.bell_angle)
