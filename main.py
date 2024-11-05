@@ -20,12 +20,22 @@ if True:
 pygame.init()
 
 phy = init_physics()
-bell = init_bell(phy, np.pi+0.05)
+bell = init_bell(phy, 0.0)
 
-bell.img_init = pygame.image.load('all.png')
+bell.img_init = pygame.image.load('bell.png')
 
 bell.sound = pygame.mixer.Sound('bellsound.wav')
 bell.img = pygame.transform.scale(bell.img_init, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
+
+#Import images and transform scales
+wheelimg = pygame.image.load('wheel.png')
+wheelimg = pygame.transform.scale(wheelimg, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
+
+clapperimg = pygame.image.load('clapper.png')
+clapperimg = pygame.transform.scale(clapperimg, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
+
+justbellimg = pygame.image.load('justbell.png')
+justbellimg = pygame.transform.scale(justbellimg, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
 
 # set up the window
 DISPLAYSURF = pygame.display.set_mode((phy.pixels_x, phy.pixels_y), 0, 32)
@@ -62,25 +72,18 @@ async def main():
         textRectObj = textSurfaceObj.get_rect()
         textRectObj.center = (800,500)
         
-        wheelimg = pygame.image.load('wheel.png')
-        clapperimg = pygame.image.load('clapper.png')
-        bellimg = pygame.image.load('justbell.png')
-
-        merge = wheelimg.copy()
-        merge.blit(clapperimg, (0, 0))
-        merge.blit(bellimg, (0, 0))
-
-        bell.img_init = merge
-        clapper_rotate, (x_box, y_box)  = phy.rotate(clapperimg, bell.clapper_angle)
+    
+        #Rotate clapper relative to the bell and paste
         
-        merge = wheelimg.copy()
-        merge.blit(clapperimg, (0, 0))
-        merge.blit(bellimg, (0, 0))
+        wheel_rot, (x_box, y_box) = phy.rotate(wheelimg, bell.bell_angle)
+        DISPLAYSURF.blit(wheel_rot, (phy.pix(x_box,y_box)))
 
-
-        img_plot, (x_box, y_box) = phy.rotate(bell.img, bell.bell_angle)
+        clapper_rot, (x_box, y_box) = phy.rotate(clapperimg, bell.clapper_angle + bell.bell_angle)
+        DISPLAYSURF.blit(clapper_rot, (phy.pix(x_box,y_box)))
         
-        DISPLAYSURF.blit(img_plot, (phy.pix(x_box,y_box)))
+        clapper_rot, (x_box, y_box) = phy.rotate(justbellimg, bell.bell_angle)
+        DISPLAYSURF.blit(clapper_rot, (phy.pix(x_box,y_box)))
+        
         DISPLAYSURF.blit(textSurfaceObj, textRectObj)
     
         phy.draw_point(DISPLAYSURF, bell.c_x, bell.c_y,GREEN)

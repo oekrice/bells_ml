@@ -7,6 +7,7 @@ Created on Mon Sep  2 17:29:08 2024
 import numpy as np
 import pygame, sys
 from pygame.locals import *
+import time
 
 class init_physics:
     #define some physical parameters, like gravity etc.
@@ -23,9 +24,13 @@ class init_physics:
         self.xscale = self.pixels_x/self.x1
         self.yscale = self.pixels_y/self.y1
         self.count = 0
+        self.game_time = 0.0
+        self.time_reference = time.time()
+        self.real_time = time.time() - self.time_reference
+
 
     def rotate(self, image, angle):
-        #Rotates bell image
+        #Rotates bell image. Need to be very careful with angles.
         init_w, _ = image.get_size()
         size_correction = init_w*np.sqrt(2)*np.cos(angle%(np.pi/2) - np.pi/4)
         rot_image = pygame.transform.rotate(image, 180*angle/np.pi)
@@ -51,7 +56,6 @@ class init_bell:
         self.vy = 0.0
         self.mass = 10.0   #mass of bell (in kg)
         
-        
         self.radius = 0.5    #radius of wheel (in m)
         self.counter = 0.15 #counterweight as proportion of weight on right side. Affects natural frequency of the swing
         self.garter_hole = np.pi/4  #position of the garter hole relative to the stay
@@ -62,9 +66,9 @@ class init_bell:
         
         self.clapper_angle = 0.1  #Angle of clapper RELATIVE to the bell
         self.clapper_mass = 0.05*self.mass   # mass of clapper (proportionally to the bell I suppose)
-        self.clapper_limit = 0.5   #maximum clapper angle  (will need tweaking)
+        self.clapper_limit = 0.3   #maximum clapper angle  (will need tweaking)
         self.clapper_pivot = 0.1*self.com_1 #distance of pivot point from the centre of the bell
-        self.clapper_length = 0.3*self.radius  #clapper length
+        self.clapper_length = 0.5*self.radius  #clapper length
         self.clapper_velocity = 0.0  #clapper angular velocity
         self.onedge = False
         self.ding = False; self.ding_reset = True
@@ -81,8 +85,8 @@ class init_bell:
         self.velocity = 0.0   #angular velocity in radians/s
 
         self.wheel_force = 0.0  #force on the bell wheel (as in, rope pull)
-        self.stay_angle = 0.15 #how far over the top can the bell go (elastic collision)
-        self.friction = 0.1 #friction parameter in arbitrary units
+        self.stay_angle = 0.1 #how far over the top can the bell go (elastic collision)
+        self.friction = 0.075 #friction parameter in arbitrary units
         self.backstroke_pull = 1.0   #length of backstroke pull in metres
         
         self.sound_angle = np.pi/4   #bell angle at which it dings
@@ -127,7 +131,7 @@ class init_bell:
         #raw_angle = np.arctan2(self.cl_x - self.p_x, self.cl_y - self.p_y)
         #Add gravity moment from clapper (mass is irrelevant as it cancels out)
         cl_force = phy.g*(self.cl_x - self.p_x)/self.clapper_length
-        cl_force = cl_force - 0.4*self.clapper_velocity*self.friction
+        cl_force = cl_force - 0.1*self.clapper_velocity*self.friction
         self.clapper_velocity = self.clapper_velocity + cl_force*phy.dt - self.accel*phy.dt   #this is RELATIVE to the bell
         
         
@@ -144,11 +148,11 @@ class init_bell:
         
         #Check if bell has struck
         if self.clapper_angle < -self.clapper_limit:
-            self.clapper_velocity = 0.0
+            self.clapper_velocity = -0.1*self.clapper_velocity
             self.clapper_angle = -self.clapper_limit
             self.onedge = True
         elif self.clapper_angle > self.clapper_limit:
-            self.clapper_velocity = 0.0
+            self.clapper_velocity = -0.1*self.clapper_velocity
             self.clapper_angle = self.clapper_limit
             self.onedge = True
         else:
@@ -173,8 +177,12 @@ class init_bell:
 
         self.cl_x = self.clapper_pivot*np.sin(self.bell_angle) + self.clapper_length*np.sin(self.bell_angle + self.clapper_angle)
         self.cl_y = -self.clapper_pivot*np.cos(self.bell_angle) - self.clapper_length*np.cos(self.bell_angle + self.clapper_angle)
-
-
+        
+        #Adjust time step to match reality
+        dt = time.time() - phy.time_reference  
+        phy.time_reference = time.time()
+        phy.dt = dt
+        
     def ropelength(self):
         #Outputs the length of the rope above the garter hole, relative to the minimum.
         #Also outputs the maximum force available with direction.
