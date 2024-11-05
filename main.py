@@ -20,7 +20,7 @@ if False:
 pygame.init()
 
 phy = init_physics()
-bell = init_bell(phy, np.pi+0.05)
+bell = init_bell(phy, 0.0)
 
 bell.img_init = pygame.image.load('bell.png')
 
