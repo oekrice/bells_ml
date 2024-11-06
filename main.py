@@ -6,7 +6,7 @@ Created on Thu Aug 29 10:03:56 2024
 """
 
 import asyncio
-#import nest_asyncio
+import nest_asyncio
 
 import pygame, sys
 from pygame.locals import *
@@ -14,7 +14,7 @@ import numpy as np
 
 from bell_physics import init_bell, init_physics
       
-if False:
+if True:
     nest_asyncio.apply()
 
 pygame.init()
@@ -51,7 +51,7 @@ async def main():
     
     fpsClock = pygame.time.Clock()
 
-    wheel_force = 7.5
+    wheel_force = 500   #force on the rope (in Newtons)
 
     while True: # the main game loop
         DISPLAYSURF.fill(WHITE)
@@ -87,7 +87,7 @@ async def main():
         wheel_rot, (x_box, y_box) = phy.rotate(wheelimg, bell.bell_angle)
         DISPLAYSURF.blit(wheel_rot, (phy.pix(x_box,y_box)))
 
-        clapper_rot, (x_box, y_box) = phy.rotate(clapperimg, bell.clapper_angle + bell.bell_angle)
+        clapper_rot, (x_box, y_box) = phy.rotate(clapperimg, bell.clapper_angle)
         DISPLAYSURF.blit(clapper_rot, (phy.pix(x_box,y_box)))
         
         clapper_rot, (x_box, y_box) = phy.rotate(justbellimg, bell.bell_angle)
