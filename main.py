@@ -23,8 +23,19 @@ phy = init_physics()
 bell = init_bell(phy, 0.0)
 
 bell.img_init = pygame.image.load('bell.png')
-bell.sound = pygame.mixer.Sound('bellsound.wav')
+
+bell.sound = pygame.mixer.Sound('bellsound_deep.wav')
 bell.img = pygame.transform.scale(bell.img_init, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
+
+#Import images and transform scales
+wheelimg = pygame.image.load('wheel.png')
+wheelimg = pygame.transform.scale(wheelimg, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
+
+clapperimg = pygame.image.load('clapper.png')
+clapperimg = pygame.transform.scale(clapperimg, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
+
+justbellimg = pygame.image.load('justbell.png')
+justbellimg = pygame.transform.scale(justbellimg, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
 
 # set up the window
 DISPLAYSURF = pygame.display.set_mode((phy.pixels_x, phy.pixels_y), 0, 32)
@@ -33,13 +44,14 @@ pygame.display.set_caption('Animation')
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
 BLACK = (0,0,0)
 
 async def main():
     
     fpsClock = pygame.time.Clock()
 
-    force = 6.0 
+    wheel_force = 7.5
 
     while True: # the main game loop
         DISPLAYSURF.fill(WHITE)
@@ -50,7 +62,7 @@ async def main():
         #DISPLAY THINGS
         
         #Display 'handstroke' or 'backstroke'
-        fontObj = pygame.font.Font('freesansbold.ttf', 32)
+        fontObj = pygame.font.Font('freesansbold.ttf', 16)
         if bell.effect_force < 0.0:
             textSurfaceObj = fontObj.render('Handstroke', True, BLACK, WHITE)
         elif bell.rlength > bell.max_length - bell.backstroke_pull:
@@ -58,35 +70,58 @@ async def main():
         else:
             textSurfaceObj = fontObj.render('', True, BLACK, WHITE)
         textRectObj = textSurfaceObj.get_rect()
-        textRectObj.center = (800,500)
-
-        bell.c_x, bell.c_y = -bell.com*np.sin(bell.angle), bell.com*np.cos(bell.angle)
-        img_plot, (x_box, y_box) = phy.rotate(bell.img, bell.angle)
+        textRectObj.center = (0.8*phy.pixels_x,0.8*phy.pixels_y)
         
-        DISPLAYSURF.blit(img_plot, (phy.pix(x_box,y_box)))
+        DISPLAYSURF.blit(textSurfaceObj, textRectObj)
+
+        #fontObj = pygame.font.Font('freesansbold.ttf', 16)
+        #textSurfaceObj = fontObj.render(str(bell.sound.get_volume()), True, BLACK, WHITE)
+        #textRectObj = textSurfaceObj.get_rect()
+        #textRectObj.center = (0.2*phy.pixels_x,0.2*phy.pixels_y)
+
+
+        DISPLAYSURF.blit(textSurfaceObj, textRectObj)
+
+        #Rotate clapper relative to the bell and paste
+        
+        wheel_rot, (x_box, y_box) = phy.rotate(wheelimg, bell.bell_angle)
+        DISPLAYSURF.blit(wheel_rot, (phy.pix(x_box,y_box)))
+
+        clapper_rot, (x_box, y_box) = phy.rotate(clapperimg, bell.clapper_angle + bell.bell_angle)
+        DISPLAYSURF.blit(clapper_rot, (phy.pix(x_box,y_box)))
+        
+        clapper_rot, (x_box, y_box) = phy.rotate(justbellimg, bell.bell_angle)
+        DISPLAYSURF.blit(clapper_rot, (phy.pix(x_box,y_box)))
+        
+        #Display helpful blobs
+        
         DISPLAYSURF.blit(textSurfaceObj, textRectObj)
     
-        phy.draw_point(DISPLAYSURF, bell.c_x, bell.c_y,GREEN)
+        #phy.draw_point(DISPLAYSURF, bell.c_x, bell.c_y,GREEN)
     
-        phy.draw_point(DISPLAYSURF, 0,0,RED)
-        #Check for sound
-        if abs(bell.angle) > bell.sound_angle and abs(bell.prev_angle) <= bell.sound_angle:
-            bell.sound.play()
+        #phy.draw_point(DISPLAYSURF, bell.cl_x, bell.cl_y,BLUE)
 
+        #phy.draw_point(DISPLAYSURF, bell.p_x, bell.p_y,BLUE)
+
+        #phy.draw_point(DISPLAYSURF, 0,0,RED)
+        #Check for sound
+        if bell.ding == True:
+        #if abs(bell.bell_angle) > bell.sound_angle and abs(bell.prev_angle) <= bell.sound_angle:
+            bell.sound.play()
         #Check for force on wheel - this takes effect at the next timestep
         press_keys = pygame.key.get_pressed()
         press_mouse = pygame.mouse.get_pressed()
             
         if press_keys[pygame.K_SPACE] or press_mouse[0]:
             if bell.effect_force < 0.0:   #Can pull the entire handstroke
-                bell.force = bell.effect_force*force
+                bell.wheel_force = bell.effect_force*wheel_force
             else:           #Can only pull some of the backstroke
                 if bell.rlength > bell.max_length - bell.backstroke_pull:
-                    bell.force = bell.effect_force*force
+                    bell.wheel_force = bell.effect_force*wheel_force
                 else:
-                    bell.force = 0.0
+                    bell.wheel_force = 0.0
         else:
-            bell.force = 0.0
+            bell.wheel_force = 0.0
             
         #Check for quit
         for event in pygame.event.get():
