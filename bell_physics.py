@@ -14,8 +14,8 @@ class init_physics:
     #use m/s as units I think. Need to convert that to pixel space, naturally
     #Also various plotting tools in here, because I can't think where else to put them
     def __init__(self):
-        self.pixels_x = 500
-        self.pixels_y = 500
+        self.pixels_x = 375
+        self.pixels_y = 375
         self.FPS = 60
         self.g = 9.8 #Gravitational acceleration
         self.x1 = 1.5 #width of domain in 'metres'
@@ -116,7 +116,6 @@ class init_bell:
     def timestep(self, phy):
         #Do the timestep here, using only bell.force, which comes either from an input or the machine
         #Update the physics here
-
         if not self.onedge:     #CLAPPER IS NOT RESTING ON THE EDGE OF THE BELL
 
             #Acceleration due to gravity

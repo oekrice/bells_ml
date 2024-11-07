@@ -21,7 +21,7 @@ if True:
 pygame.init()
 
 phy = init_physics()
-bell = init_bell(phy, 0.0)
+bell = init_bell(phy, np.pi*4/6)
 dp = display_tools(phy, bell)
 
 bell.sound = pygame.mixer.Sound('bellsound_deep.wav')
@@ -38,7 +38,7 @@ async def main():
     fpsClock = pygame.time.Clock()
 
     wheel_force = 600   #force on the rope (in Newtons)
-
+    count = 0
     while True: # the main game loop
     
         dp.surface.fill(dp.WHITE)
@@ -48,8 +48,9 @@ async def main():
         
         dp.draw_rope(phy, bell)
 
-        dp.display_stroke(phy, bell)   #Displays the text 'handstroke' or 'backstroke'
         dp.draw_bell(phy, bell)        
+
+        dp.display_stroke(phy, bell)   #Displays the text 'handstroke' or 'backstroke'
     
         #Check for sound
         if bell.ding == True:
