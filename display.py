@@ -39,7 +39,7 @@ class display_tools():
 
     def display_stroke(self, phy, bell):
         #Display 'handstroke' or 'backstroke'
-        fontObj = pygame.font.Font('freesansbold.ttf', 16)
+        fontObj = pygame.font.Font(pygame.font.match_font('arial'), 16)
         if bell.effect_force < 0.0:
             textSurfaceObj = fontObj.render('Handstroke', True, self.BLACK, self.WHITE)
         elif bell.rlength > bell.max_length - bell.backstroke_pull:
@@ -65,10 +65,7 @@ class display_tools():
     
     def draw_rope(self, phy, bell):
         
-        #DO THIS NICELY - x and y are the CORRECT way up. Always use these functions to display.
-        xpix = lambda x:  phy.pixels_x/2 + x*phy.xscale
-        ypix = lambda y: (phy.pixels_y/2 - y*phy.yscale)
-        
+        #DO THIS NICELY - x and y are the CORRECT way up. Always use these functions to display.        
         ppix = lambda p: (phy.pixels_x/2 + p[0]*phy.xscale, (phy.pixels_y/2 - p[1]*phy.yscale))
         
         #Figure out rope coordintes. Needs to draw as a polygon, which is a bit of a faff.
@@ -124,7 +121,6 @@ class display_tools():
         
         pygame.draw.polygon(self.surface, self.DARKBROWN, [ppix(p0), ppix(p1), ppix(p2), ppix(p3)])
         pygame.draw.polygon(self.surface, self.BLACK, [ppix(p0), ppix(p1), ppix(p2), ppix(p3)], width = 1)
-
 
         #pygame.draw.circle(self.surface, self.DARKBROWN, (xpix(xbase), ypix(ybase)),8,0)
         #pygame.draw.circle(self.surface, self.BLACK, (xpix(xbase), ypix(ybase)),8,2)

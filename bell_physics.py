@@ -51,41 +51,20 @@ class init_bell:
     #class for attributes of the bell itself, eg. speed and location
 
     def __init__(self, phy, init_angle):
-        
-        self.vx = 0.0
-        self.vy = 0.0
-        self.mass = 10.0   #mass of bell (in kg)
-        
+                
         self.radius = 0.5    #radius of wheel (in m)
-        self.counter = 0.15 #counterweight as proportion of weight on right side. Affects natural frequency of the swing
         self.garter_hole = np.pi/4  #position of the garter hole relative to the stay
-        
-        self.com_1 = -0.6*self.radius   #point at which gravity acts in the correct direction
-        self.com_2 = -self.com_1    #point at which gravity acts in the counterweight direction
-                #This is sort of arbirtrary given you can adjust the proportions, and I'll leave it as that        
-        
-        self.clapper_mass = 0.05*self.mass   # mass of clapper (proportionally to the bell I suppose)
-        self.clapper_pivot = 0.1*self.com_1 #distance of pivot point from the centre of the bell
-        self.clapper_length = 0.5*self.radius  #clapper length
-        self.clapper_velocity = 0.0  #clapper angular velocity
+                
         self.onedge = False
         self.ding = False; self.ding_reset = True
         self.ding_time = 0.0
         
-        self.m1 = self.mass/(1.0 + self.counter)   #mass through right-side position
-        self.m2 = self.mass - self.m1   #mass through wrong-side position
-
-        self.bell_angle = init_angle
-        self.c_x, self.c_y = 0.0, self.com_1   #centres of mass for plotting
-        self.cl_x, self.cl_y = 0.0, self.clapper_pivot + self.clapper_length   #centres of mass for clapper. 
-        self.p_x, self.p_y = 0.0, self.clapper_pivot 
-
         self.accel = 0.0   #angular acceleration in radians/s^2
         self.velocity = 0.0   #angular velocity in radians/s
+        self.bell_angle = init_angle
 
         self.backstroke_pull = 1.0   #length of backstroke pull in metres
         
-        self.sound_angle = np.pi/4   #bell angle at which it dings
         self.prev_angle = init_angle #previous maximum angle
         self.max_length = 0.0   #max backstroke length
         
@@ -101,14 +80,17 @@ class init_bell:
         self.stay_angle = 0.15 #how far over the top can the bell go (elastic collision)
         self.friction = 0.025 #friction parameter in arbitrary units
 
+        self.clapper_accel = 0.0  #clapper angular acceleration
+        self.clapper_velocity = 0.0  #clapper angular velocity
         self.clapper_angle = self.bell_angle  #Angle of clapper RELATIVE TO GRAVITY
+
         self.p = 0.1*self.radius #distance of pivot point from the centre of the bell
         self.l_2 = 0.65*self.radius  #clapper length
         self.k_2 = 1.5   #coefficient in the clapper moment of intertia
 
         self.m_2 = 0.05*self.m_1  #mass of clapper
         self.clapper_limit = 0.3   #maximum clapper angle  (will need tweaking)
-        self.onedge = False
+        self.onedge = False   #True if the clapper is in contact with the bell
         self.strike_velocity = 0.0
         self.volume_ref = 0.0
         self.clapper_friction = 0.1*self.friction
@@ -213,8 +195,6 @@ class init_bell:
                 den = self.m_1*((1.0 + self.k_1)*self.l_1**2) + self.m_2*((1.0 + self.k_2)*(self.p + self.l_2*np.cos(old_angle - self.clapper_angle))**2)
                 self.accel = num/den
                 
-                #self.accel = (-phy.g*np.sin(old_angle))/((1.0 + self.k_1)*self.l_1)
-
                 #Acceleration on the wheel (this isn't quite accurate but meh)
                 self.accel = self.accel + self.wheel_force*self.radius/den
                 #Friction (proportional to angular velocity. Increases with weight for now)
@@ -273,13 +253,7 @@ class init_bell:
         if len(self.rlengths) > 3: #Maximum height of previous backstroke. To allow for adjustment of tail end length.
             if self.effect_force > 0.0 and self.rlengths[-1] < self.rlengths[-2] and self.rlengths[-2] > self.rlengths[-3]:
                 self.max_length = self.rlengths[-1]
-        
-        self.c_x, self.c_y = - self.com_1*np.sin(self.bell_angle),  self.com_1*np.cos(self.bell_angle)
-        self.p_x, self.p_y = - self.clapper_pivot*np.sin(self.bell_angle),  self.clapper_pivot*np.cos(self.bell_angle)
-
-        self.cl_x = self.clapper_pivot*np.sin(self.bell_angle) + self.clapper_length*np.sin(self.bell_angle + self.clapper_angle)
-        self.cl_y = -self.clapper_pivot*np.cos(self.bell_angle) - self.clapper_length*np.cos(self.bell_angle + self.clapper_angle)
-        
+                
         #Adjust time step to match reality
         dt = time.time() - phy.time_reference  
         phy.time_reference = time.time()
