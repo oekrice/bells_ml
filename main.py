@@ -6,7 +6,7 @@ Created on Thu Aug 29 10:03:56 2024
 """
 
 import asyncio
-import nest_asyncio
+#import nest_asyncio
 
 import pygame, sys
 from pygame.locals import *
@@ -15,7 +15,7 @@ import numpy as np
 from bell_physics import init_bell, init_physics
 from display import display_tools
 
-if True:
+if False:
     nest_asyncio.apply()
 
 pygame.init()
