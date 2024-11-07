@@ -108,6 +108,7 @@ async def main():
         if bell.ding == True:
         #if abs(bell.bell_angle) > bell.sound_angle and abs(bell.prev_angle) <= bell.sound_angle:
             bell.sound.play()
+            #continue
         #Check for force on wheel - this takes effect at the next timestep
         press_keys = pygame.key.get_pressed()
         press_mouse = pygame.mouse.get_pressed()

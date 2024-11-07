@@ -161,12 +161,14 @@ class init_bell:
             self.clapper_angle = self.clapper_angle + self.clapper_velocity*phy.dt
     
         else:   #Clapper is on the edge of the bell
+            #Need to do the same physics initially as if they are not attached, to check if they should still be.
             self.accel = (-phy.g*np.sin(self.bell_angle))/((1.0 + self.k_1)*self.l_1)
             #Acceleration on the wheel
             self.accel = self.accel + (1/self.m_1)*self.wheel_force*self.radius/((1.0 + self.k_1)*self.l_1**2)
             #Friction (proportional to angular velocity. Increases with weight for now)
             self.accel = self.accel - self.velocity*self.friction
             
+            old_velocity = self.velocity; old_angle = self.bell_angle
             #Velocity timestep (forward Euler)
             self.velocity = self.velocity + self.accel*phy.dt 
             #extra friction so it actually stops at some point
@@ -190,10 +192,34 @@ class init_bell:
             self.clapper_accel = num/den
             self.clapper_accel = self.clapper_accel - self.clapper_friction*(self.clapper_velocity - self.velocity)
 
-            if self.clapper_accel*self.clapper_velocity > self.accel*self.velocity:
+            if self.clapper_accel*self.clapper_velocity > self.accel*self.velocity:   
+                #Do leave the bell, so update the clapper accordingly.
+                #Bell acceleration at this point is fine
                 self.onedge = False
                 #update (but no friction initially)
                 self.clapper_velocity = self.clapper_velocity + self.clapper_accel*phy.dt 
+                #Update clapper angle
+                self.clapper_angle = self.clapper_angle + self.clapper_velocity*phy.dt
+
+            else:
+                #Clapper should still be attached, so scrap that physics and treat it as one body
+                num = -self.l_1*self.m_1*phy.g*np.sin(old_angle) - self.m_2*phy.g*(self.p*np.sin(old_angle) + self.l_2*np.sin(self.clapper_angle))
+                den = self.m_1*((1.0 + self.k_1)*self.l_1**2) + self.m_2*((1.0 + self.k_2)*(self.p + self.l_2*np.cos(old_angle - self.clapper_angle))**2)
+                self.accel = num/den
+                
+                #self.accel = (-phy.g*np.sin(old_angle))/((1.0 + self.k_1)*self.l_1)
+
+                #Acceleration on the wheel (this isn't quite accurate but meh)
+                self.accel = self.accel + self.wheel_force*self.radius/den
+                #Friction (proportional to angular velocity. Increases with weight for now)
+                self.accel = self.accel - self.velocity*self.friction
+            
+                self.clapper_accel = self.accel
+                
+                self.velocity = old_velocity + self.accel*phy.dt
+                self.bell_angle = old_angle + self.velocity*phy.dt
+
+                self.clapper_velocity = self.velocity
                 #Update clapper angle
                 self.clapper_angle = self.clapper_angle + self.clapper_velocity*phy.dt
 
@@ -202,13 +228,17 @@ class init_bell:
         if self.clapper_angle - self.bell_angle < -self.clapper_limit:
             if self.ding_reset:
                 self.volume_ref = 0.2*abs(self.clapper_velocity-self.velocity)
-            self.clapper_velocity = self.velocity
+            avg_velocity = (1/(self.m_1 + self.m_2))*(self.m_1*self.velocity + self.m_2*self.clapper_velocity)
+            self.clapper_velocity = avg_velocity
+            self.velocity = avg_velocity
             self.clapper_angle = -self.clapper_limit + self.bell_angle
             self.onedge = True
         elif self.clapper_angle - self.bell_angle > self.clapper_limit:
             if self.ding_reset:
                 self.volume_ref = 0.2*abs(self.clapper_velocity-self.velocity)
-            self.clapper_velocity = self.velocity
+            avg_velocity = (1/(self.m_1 + self.m_2))*(self.m_1*self.velocity + self.m_2*self.clapper_velocity)
+            self.clapper_velocity = avg_velocity
+            self.velocity = avg_velocity
             self.clapper_angle = self.clapper_limit + self.bell_angle
             self.onedge = True
         else:
