@@ -18,7 +18,7 @@ class init_physics:
         self.pixels_y = 500
         self.FPS = 60
         self.g = 9.8 #Gravitational acceleration
-        self.x1 = 2 #width of domain in 'metres'
+        self.x1 = 1.5 #width of domain in 'metres'
         self.y1 = self.x1 * self.pixels_y/self.pixels_x
         self.dt = 1.0/self.FPS
         self.xscale = self.pixels_x/self.x1
@@ -101,7 +101,7 @@ class init_bell:
         self.stay_angle = 0.15 #how far over the top can the bell go (elastic collision)
         self.friction = 0.025 #friction parameter in arbitrary units
 
-        self.clapper_angle = 0.0#self.bell_angle  #Angle of clapper RELATIVE TO GRAVITY
+        self.clapper_angle = self.bell_angle  #Angle of clapper RELATIVE TO GRAVITY
         self.p = 0.1*self.radius #distance of pivot point from the centre of the bell
         self.l_2 = 0.65*self.radius  #clapper length
         self.k_2 = 1.5   #coefficient in the clapper moment of intertia
@@ -149,6 +149,7 @@ class init_bell:
                 self.velocity = -0.7*self.velocity
                 self.bell_angle = -2*np.pi - 2*self.stay_angle - self.bell_angle
     
+
             #Update location of the clapper (using some physics which may well be dodgy)
             num = -phy.g*np.sin(self.clapper_angle) - self.p*(self.accel*np.cos(self.bell_angle-self.clapper_angle) - self.velocity**2*np.sin(self.bell_angle-self.clapper_angle))
             den = ((1.0 + self.k_2)*self.l_2)
@@ -160,6 +161,7 @@ class init_bell:
             #Update clapper angle
             self.clapper_angle = self.clapper_angle + self.clapper_velocity*phy.dt
     
+
         else:   #Clapper is on the edge of the bell
             #Need to do the same physics initially as if they are not attached, to check if they should still be.
             self.accel = (-phy.g*np.sin(self.bell_angle))/((1.0 + self.k_1)*self.l_1)
@@ -192,7 +194,12 @@ class init_bell:
             self.clapper_accel = num/den
             self.clapper_accel = self.clapper_accel - self.clapper_friction*(self.clapper_velocity - self.velocity)
 
-            if self.clapper_accel*self.clapper_velocity > self.accel*self.velocity:   
+            if abs(self.velocity) < 0.05 and self.wheel_force == 0.0:
+                if abs(self.bell_angle + np.pi + self.stay_angle) < 0.01 or abs(self.bell_angle - np.pi - self.stay_angle) < 0.01:
+                    self.velocity = 0.0
+                    self.bell_angle = np.sign(self.bell_angle)*(np.pi+self.stay_angle)
+
+            elif self.clapper_accel*self.clapper_velocity > self.accel*self.velocity:   
                 #Do leave the bell, so update the clapper accordingly.
                 #Bell acceleration at this point is fine
                 self.onedge = False
