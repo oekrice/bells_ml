@@ -14,8 +14,8 @@ class init_physics:
     #use m/s as units I think. Need to convert that to pixel space, naturally
     #Also various plotting tools in here, because I can't think where else to put them
     def __init__(self):
-        self.pixels_x = 375
-        self.pixels_y = 375
+        self.pixels_x = 600
+        self.pixels_y = 600
         self.FPS = 60
         self.g = 9.8 #Gravitational acceleration
         self.x1 = 1.5 #width of domain in 'metres'
