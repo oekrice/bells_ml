@@ -6,104 +6,52 @@ Created on Thu Aug 29 10:03:56 2024
 """
 
 import asyncio
-import nest_asyncio
+#import nest_asyncio
 
 import pygame, sys
 from pygame.locals import *
 import numpy as np
 
 from bell_physics import init_bell, init_physics
-      
-if True:
+from display import display_tools
+
+if False:
     nest_asyncio.apply()
 
 pygame.init()
 
 phy = init_physics()
 bell = init_bell(phy, 0.0)
-
-bell.img_init = pygame.image.load('bell.png')
+dp = display_tools(phy, bell)
 
 bell.sound = pygame.mixer.Sound('bellsound_deep.wav')
-bell.img = pygame.transform.scale(bell.img_init, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
 
+#Set up colours
+dp.define_colours()
 #Import images and transform scales
-wheelimg = pygame.image.load('wheel.png')
-wheelimg = pygame.transform.scale(wheelimg, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
-
-clapperimg = pygame.image.load('clapper.png')
-clapperimg = pygame.transform.scale(clapperimg, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
-
-justbellimg = pygame.image.load('justbell.png')
-justbellimg = pygame.transform.scale(justbellimg, (2*bell.radius*phy.xscale, 2*bell.radius*phy.yscale))
-
+dp.import_images(phy, bell)
 # set up the window
-DISPLAYSURF = pygame.display.set_mode((phy.pixels_x, phy.pixels_y), 0, 32)
 pygame.display.set_caption('Animation')
-
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-BLACK = (0,0,0)
 
 async def main():
     
     fpsClock = pygame.time.Clock()
 
     wheel_force = 600   #force on the rope (in Newtons)
-
+    count = 0
     while True: # the main game loop
-        DISPLAYSURF.fill(WHITE)
+    
+        dp.surface.fill(dp.WHITE)
         
         bell.timestep(phy)
         phy.count = phy.count + 1
+        
+        dp.draw_rope(phy, bell)
+
+        dp.draw_bell(phy, bell)        
+
+        dp.display_stroke(phy, bell)   #Displays the text 'handstroke' or 'backstroke'
     
-        #DISPLAY THINGS
-        
-        #Display 'handstroke' or 'backstroke'
-        fontObj = pygame.font.Font('freesansbold.ttf', 16)
-        if bell.effect_force < 0.0:
-            textSurfaceObj = fontObj.render('Handstroke', True, BLACK, WHITE)
-        elif bell.rlength > bell.max_length - bell.backstroke_pull:
-            textSurfaceObj = fontObj.render('Backstroke', True, BLACK, WHITE)
-        else:
-            textSurfaceObj = fontObj.render('', True, BLACK, WHITE)
-        textRectObj = textSurfaceObj.get_rect()
-        textRectObj.center = (0.8*phy.pixels_x,0.8*phy.pixels_y)
-        
-        DISPLAYSURF.blit(textSurfaceObj, textRectObj)
-
-        #fontObj = pygame.font.Font('freesansbold.ttf', 16)
-        #textSurfaceObj = fontObj.render(str(bell.sound.get_volume()), True, BLACK, WHITE)
-        #textRectObj = textSurfaceObj.get_rect()
-        #textRectObj.center = (0.2*phy.pixels_x,0.2*phy.pixels_y)
-
-
-        DISPLAYSURF.blit(textSurfaceObj, textRectObj)
-
-        #Rotate clapper relative to the bell and paste
-        
-        wheel_rot, (x_box, y_box) = phy.rotate(wheelimg, bell.bell_angle)
-        DISPLAYSURF.blit(wheel_rot, (phy.pix(x_box,y_box)))
-
-        clapper_rot, (x_box, y_box) = phy.rotate(clapperimg, bell.clapper_angle)
-        DISPLAYSURF.blit(clapper_rot, (phy.pix(x_box,y_box)))
-        
-        clapper_rot, (x_box, y_box) = phy.rotate(justbellimg, bell.bell_angle)
-        DISPLAYSURF.blit(clapper_rot, (phy.pix(x_box,y_box)))
-        
-        #Display helpful blobs
-        
-        DISPLAYSURF.blit(textSurfaceObj, textRectObj)
-    
-        #phy.draw_point(DISPLAYSURF, bell.c_x, bell.c_y,GREEN)
-    
-        #phy.draw_point(DISPLAYSURF, bell.cl_x, bell.cl_y,BLUE)
-
-        #phy.draw_point(DISPLAYSURF, bell.p_x, bell.p_y,BLUE)
-
-        #phy.draw_point(DISPLAYSURF, 0,0,RED)
         #Check for sound
         if bell.ding == True:
         #if abs(bell.bell_angle) > bell.sound_angle and abs(bell.prev_angle) <= bell.sound_angle:

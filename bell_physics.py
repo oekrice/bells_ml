@@ -14,11 +14,11 @@ class init_physics:
     #use m/s as units I think. Need to convert that to pixel space, naturally
     #Also various plotting tools in here, because I can't think where else to put them
     def __init__(self):
-        self.pixels_x = 500
-        self.pixels_y = 500
+        self.pixels_x = 384
+        self.pixels_y = 384
         self.FPS = 60
         self.g = 9.8 #Gravitational acceleration
-        self.x1 = 2 #width of domain in 'metres'
+        self.x1 = 1.5 #width of domain in 'metres'
         self.y1 = self.x1 * self.pixels_y/self.pixels_x
         self.dt = 1.0/self.FPS
         self.xscale = self.pixels_x/self.x1
@@ -27,7 +27,7 @@ class init_physics:
         self.game_time = 0.0
         self.time_reference = time.time()
         self.real_time = time.time() - self.time_reference
-
+        self.do_volume = True
 
     def rotate(self, image, angle):
         #Rotates bell image. Need to be very careful with angles.
@@ -51,41 +51,20 @@ class init_bell:
     #class for attributes of the bell itself, eg. speed and location
 
     def __init__(self, phy, init_angle):
-        
-        self.vx = 0.0
-        self.vy = 0.0
-        self.mass = 10.0   #mass of bell (in kg)
-        
+                
         self.radius = 0.5    #radius of wheel (in m)
-        self.counter = 0.15 #counterweight as proportion of weight on right side. Affects natural frequency of the swing
         self.garter_hole = np.pi/4  #position of the garter hole relative to the stay
-        
-        self.com_1 = -0.6*self.radius   #point at which gravity acts in the correct direction
-        self.com_2 = -self.com_1    #point at which gravity acts in the counterweight direction
-                #This is sort of arbirtrary given you can adjust the proportions, and I'll leave it as that        
-        
-        self.clapper_mass = 0.05*self.mass   # mass of clapper (proportionally to the bell I suppose)
-        self.clapper_pivot = 0.1*self.com_1 #distance of pivot point from the centre of the bell
-        self.clapper_length = 0.5*self.radius  #clapper length
-        self.clapper_velocity = 0.0  #clapper angular velocity
+                
         self.onedge = False
         self.ding = False; self.ding_reset = True
         self.ding_time = 0.0
         
-        self.m1 = self.mass/(1.0 + self.counter)   #mass through right-side position
-        self.m2 = self.mass - self.m1   #mass through wrong-side position
-
-        self.bell_angle = init_angle
-        self.c_x, self.c_y = 0.0, self.com_1   #centres of mass for plotting
-        self.cl_x, self.cl_y = 0.0, self.clapper_pivot + self.clapper_length   #centres of mass for clapper. 
-        self.p_x, self.p_y = 0.0, self.clapper_pivot 
-
         self.accel = 0.0   #angular acceleration in radians/s^2
         self.velocity = 0.0   #angular velocity in radians/s
+        self.bell_angle = init_angle
 
         self.backstroke_pull = 1.0   #length of backstroke pull in metres
         
-        self.sound_angle = np.pi/4   #bell angle at which it dings
         self.prev_angle = init_angle #previous maximum angle
         self.max_length = 0.0   #max backstroke length
         
@@ -101,14 +80,17 @@ class init_bell:
         self.stay_angle = 0.15 #how far over the top can the bell go (elastic collision)
         self.friction = 0.025 #friction parameter in arbitrary units
 
-        self.clapper_angle = 0.0#self.bell_angle  #Angle of clapper RELATIVE TO GRAVITY
+        self.clapper_accel = 0.0  #clapper angular acceleration
+        self.clapper_velocity = 0.0  #clapper angular velocity
+        self.clapper_angle = self.bell_angle  #Angle of clapper RELATIVE TO GRAVITY
+
         self.p = 0.1*self.radius #distance of pivot point from the centre of the bell
         self.l_2 = 0.65*self.radius  #clapper length
         self.k_2 = 1.5   #coefficient in the clapper moment of intertia
 
         self.m_2 = 0.05*self.m_1  #mass of clapper
         self.clapper_limit = 0.3   #maximum clapper angle  (will need tweaking)
-        self.onedge = False
+        self.onedge = False   #True if the clapper is in contact with the bell
         self.strike_velocity = 0.0
         self.volume_ref = 0.0
         self.clapper_friction = 0.1*self.friction
@@ -116,7 +98,6 @@ class init_bell:
     def timestep(self, phy):
         #Do the timestep here, using only bell.force, which comes either from an input or the machine
         #Update the physics here
-
         if not self.onedge:     #CLAPPER IS NOT RESTING ON THE EDGE OF THE BELL
 
             #Acceleration due to gravity
@@ -149,6 +130,7 @@ class init_bell:
                 self.velocity = -0.7*self.velocity
                 self.bell_angle = -2*np.pi - 2*self.stay_angle - self.bell_angle
     
+
             #Update location of the clapper (using some physics which may well be dodgy)
             num = -phy.g*np.sin(self.clapper_angle) - self.p*(self.accel*np.cos(self.bell_angle-self.clapper_angle) - self.velocity**2*np.sin(self.bell_angle-self.clapper_angle))
             den = ((1.0 + self.k_2)*self.l_2)
@@ -160,6 +142,7 @@ class init_bell:
             #Update clapper angle
             self.clapper_angle = self.clapper_angle + self.clapper_velocity*phy.dt
     
+
         else:   #Clapper is on the edge of the bell
             #Need to do the same physics initially as if they are not attached, to check if they should still be.
             self.accel = (-phy.g*np.sin(self.bell_angle))/((1.0 + self.k_1)*self.l_1)
@@ -192,7 +175,12 @@ class init_bell:
             self.clapper_accel = num/den
             self.clapper_accel = self.clapper_accel - self.clapper_friction*(self.clapper_velocity - self.velocity)
 
-            if self.clapper_accel*self.clapper_velocity > self.accel*self.velocity:   
+            if abs(self.velocity) < 0.05 and self.wheel_force == 0.0:
+                if abs(self.bell_angle + np.pi + self.stay_angle) < 0.01 or abs(self.bell_angle - np.pi - self.stay_angle) < 0.01:
+                    self.velocity = 0.0
+                    self.bell_angle = np.sign(self.bell_angle)*(np.pi+self.stay_angle)
+
+            elif self.clapper_accel*self.clapper_velocity > self.accel*self.velocity:   
                 #Do leave the bell, so update the clapper accordingly.
                 #Bell acceleration at this point is fine
                 self.onedge = False
@@ -207,8 +195,6 @@ class init_bell:
                 den = self.m_1*((1.0 + self.k_1)*self.l_1**2) + self.m_2*((1.0 + self.k_2)*(self.p + self.l_2*np.cos(old_angle - self.clapper_angle))**2)
                 self.accel = num/den
                 
-                #self.accel = (-phy.g*np.sin(old_angle))/((1.0 + self.k_1)*self.l_1)
-
                 #Acceleration on the wheel (this isn't quite accurate but meh)
                 self.accel = self.accel + self.wheel_force*self.radius/den
                 #Friction (proportional to angular velocity. Increases with weight for now)
@@ -244,10 +230,11 @@ class init_bell:
         else:
             self.onedge = False
         if self.onedge and self.ding_reset:
-            if self.sound.get_volume() < self.volume_ref:
-                self.sound.set_volume(self.volume_ref)
-            else:
-                self.sound.set_volume(self.volume_ref + self.sound.get_volume())
+            if phy.do_volume:
+                if self.sound.get_volume() < self.volume_ref:
+                    self.sound.set_volume(self.volume_ref)
+                else:
+                    self.sound.set_volume(self.volume_ref + self.sound.get_volume())
             self.ding = True
             self.ding_reset = False
             self.ding_time = phy.game_time
@@ -255,7 +242,8 @@ class init_bell:
             self.ding = False
             
         if self.onedge and not self.ding_reset:
-            self.sound.set_volume(np.exp(-5e1*phy.dt)*self.volume_ref)
+            if phy.do_volume:
+                self.sound.set_volume(np.exp(-5e1*phy.dt)*self.volume_ref)
         if abs(self.clapper_angle - self.bell_angle) < self.clapper_limit - 0.1:
             self.ding_reset = True
             
@@ -265,13 +253,7 @@ class init_bell:
         if len(self.rlengths) > 3: #Maximum height of previous backstroke. To allow for adjustment of tail end length.
             if self.effect_force > 0.0 and self.rlengths[-1] < self.rlengths[-2] and self.rlengths[-2] > self.rlengths[-3]:
                 self.max_length = self.rlengths[-1]
-        
-        self.c_x, self.c_y = - self.com_1*np.sin(self.bell_angle),  self.com_1*np.cos(self.bell_angle)
-        self.p_x, self.p_y = - self.clapper_pivot*np.sin(self.bell_angle),  self.clapper_pivot*np.cos(self.bell_angle)
-
-        self.cl_x = self.clapper_pivot*np.sin(self.bell_angle) + self.clapper_length*np.sin(self.bell_angle + self.clapper_angle)
-        self.cl_y = -self.clapper_pivot*np.cos(self.bell_angle) - self.clapper_length*np.cos(self.bell_angle + self.clapper_angle)
-        
+                
         #Adjust time step to match reality
         dt = time.time() - phy.time_reference  
         phy.time_reference = time.time()
