@@ -14,8 +14,8 @@ class init_physics:
     #use m/s as units I think. Need to convert that to pixel space, naturally
     #Also various plotting tools in here, because I can't think where else to put them
     def __init__(self):
-        self.pixels_x = 600
-        self.pixels_y = 600
+        self.pixels_x = 384
+        self.pixels_y = 384
         self.FPS = 60
         self.g = 9.8 #Gravitational acceleration
         self.x1 = 1.5 #width of domain in 'metres'
@@ -27,7 +27,7 @@ class init_physics:
         self.game_time = 0.0
         self.time_reference = time.time()
         self.real_time = time.time() - self.time_reference
-
+        self.do_volume = False
 
     def rotate(self, image, angle):
         #Rotates bell image. Need to be very careful with angles.
@@ -250,10 +250,11 @@ class init_bell:
         else:
             self.onedge = False
         if self.onedge and self.ding_reset:
-            if self.sound.get_volume() < self.volume_ref:
-                self.sound.set_volume(self.volume_ref)
-            else:
-                self.sound.set_volume(self.volume_ref + self.sound.get_volume())
+            if phy.do_volume:
+                if self.sound.get_volume() < self.volume_ref:
+                    self.sound.set_volume(self.volume_ref)
+                else:
+                    self.sound.set_volume(self.volume_ref + self.sound.get_volume())
             self.ding = True
             self.ding_reset = False
             self.ding_time = phy.game_time
@@ -261,7 +262,8 @@ class init_bell:
             self.ding = False
             
         if self.onedge and not self.ding_reset:
-            self.sound.set_volume(np.exp(-5e1*phy.dt)*self.volume_ref)
+            if phy.do_volume:
+                self.sound.set_volume(np.exp(-5e1*phy.dt)*self.volume_ref)
         if abs(self.clapper_angle - self.bell_angle) < self.clapper_limit - 0.1:
             self.ding_reset = True
             
