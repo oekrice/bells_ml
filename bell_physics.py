@@ -27,7 +27,7 @@ class init_physics:
         self.game_time = 0.0
         self.time_reference = time.time()
         self.real_time = time.time() - self.time_reference
-        self.do_volume = False
+        self.do_volume = True
 
     def rotate(self, image, angle):
         #Rotates bell image. Need to be very careful with angles.
