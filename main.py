@@ -21,7 +21,7 @@ if False:
 pygame.init()
 
 phy = init_physics()
-bell = init_bell(phy, np.pi*4/6)
+bell = init_bell(phy, 0.0)
 dp = display_tools(phy, bell)
 
 bell.sound = pygame.mixer.Sound('bellsound_deep.wav')
