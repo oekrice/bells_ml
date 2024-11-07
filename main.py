@@ -51,7 +51,7 @@ async def main():
     
     fpsClock = pygame.time.Clock()
 
-    wheel_force = 500   #force on the rope (in Newtons)
+    wheel_force = 600   #force on the rope (in Newtons)
 
     while True: # the main game loop
         DISPLAYSURF.fill(WHITE)
