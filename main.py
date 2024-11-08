@@ -39,7 +39,7 @@ pygame.display.set_caption('Animation')
 class Networks():
     def __init__(self):
         local_dir = os.path.dirname(__file__)
-        config_path = os.path.join(local_dir, 'config_bell')
+        config_path = os.path.join(local_dir, 'networks/config_bell')
         config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                              neat.DefaultSpeciesSet, neat.DefaultStagnation,
                              config_path)
