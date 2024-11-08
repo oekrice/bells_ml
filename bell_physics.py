@@ -28,7 +28,7 @@ class init_physics:
         self.time_reference = time.time()
         self.real_time = time.time() - self.time_reference
         self.do_volume = True
-
+        
     def rotate(self, image, angle):
         #Rotates bell image. Need to be very careful with angles.
         init_w, _ = image.get_size()
@@ -94,6 +94,7 @@ class init_bell:
         self.strike_velocity = 0.0
         self.volume_ref = 0.0
         self.clapper_friction = 0.1*self.friction
+        self.stay_hit = False
         
     def timestep(self, phy):
         #Do the timestep here, using only bell.force, which comes either from an input or the machine
@@ -126,10 +127,16 @@ class init_bell:
             if self.bell_angle > np.pi + self.stay_angle:
                 self.velocity = -0.7*self.velocity
                 self.bell_angle = 2*np.pi + 2*self.stay_angle - self.bell_angle
+                if abs(self.velocity) > 1.0:
+                    self.stay_hit = True
+                    self.velocity = -0.5*self.velocity
             if self.bell_angle < -np.pi - self.stay_angle:
                 self.velocity = -0.7*self.velocity
                 self.bell_angle = -2*np.pi - 2*self.stay_angle - self.bell_angle
-    
+
+                if abs(self.velocity) > 1.0:
+                    self.stay_hit = True
+                    self.velocity = -0.5*self.velocity
 
             #Update location of the clapper (using some physics which may well be dodgy)
             num = -phy.g*np.sin(self.clapper_angle) - self.p*(self.accel*np.cos(self.bell_angle-self.clapper_angle) - self.velocity**2*np.sin(self.bell_angle-self.clapper_angle))
@@ -165,9 +172,17 @@ class init_bell:
             if self.bell_angle > np.pi + self.stay_angle:
                 self.velocity = -0.7*self.velocity
                 self.bell_angle = 2*np.pi + 2*self.stay_angle - self.bell_angle
+                if abs(self.velocity) > 1.0:
+                    self.stay_hit = True
+                    self.velocity = -0.5*self.velocity
+
             if self.bell_angle < -np.pi - self.stay_angle:
                 self.velocity = -0.7*self.velocity
                 self.bell_angle = -2*np.pi - 2*self.stay_angle - self.bell_angle
+                if abs(self.velocity) > 1.0:
+                    self.stay_hit = True
+                    self.velocity = -0.5*self.velocity
+
                 
             #Check if clapper needs to leave the bell
             num = -phy.g*np.sin(self.clapper_angle) - self.p*(self.accel*np.cos(self.bell_angle-self.clapper_angle) - self.velocity**2*np.sin(self.bell_angle-self.clapper_angle))

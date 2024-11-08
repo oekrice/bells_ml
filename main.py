@@ -97,15 +97,30 @@ async def main():
             inputs = bell.get_scaled_state()
             action = nets.up.activate(inputs)
             force = action[0]
-            bell.wheel_force = bell.wheel_force + force*bell.effect_force*wheel_force
+            bell.wheel_force = min(bell.wheel_force + force*bell.effect_force*wheel_force, bell.effect_force*wheel_force)
         if ring_down:
             inputs = bell.get_scaled_state()
             action = nets.down.activate(inputs)
             force = action[0]
-            bell.wheel_force = bell.wheel_force + force*bell.effect_force*wheel_force
+            bell.wheel_force = min(bell.wheel_force + force*bell.effect_force*wheel_force, bell.effect_force*wheel_force)
 
+        mouse = pygame.mouse.get_pos()   #use to activate things
+        
+        for event in pygame.event.get():
+            if event.type == 1025:
+                if mouse[0] > 40 and mouse[0] < 110 and mouse[1] > 70 and mouse[1] < 90:
+                    #left button
+                    ring_up = not(ring_up)
+                    ring_down = False
+                
+            if event.type == 1025:
 
-        #Check for actions
+                if mouse[0] > 270 and mouse[0] < 340 and mouse[1] > 70 and mouse[1] < 90:
+                    #left button
+                    ring_down = not(ring_down)
+                    ring_up = False
+
+        #Check for actions or stay smash
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_u:
@@ -119,6 +134,9 @@ async def main():
             if event.type == QUIT:
                 pygame.quit()
                 return
+            
+        if bell.stay_hit:
+            bell.stay_angle = 1e6
             
         pygame.display.update()
         fpsClock.tick(phy.FPS)

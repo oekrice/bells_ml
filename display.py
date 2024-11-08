@@ -56,12 +56,18 @@ class display_tools():
         fontObj = pygame.font.Font(pygame.font.match_font('arial'), 16)
         if ring_up:
             textSurfaceObj = fontObj.render('Ringing up', True, self.BLACK, self.WHITE)
-        elif ring_down:
-            textSurfaceObj = fontObj.render('Ringing down', True, self.BLACK, self.WHITE)
         else:
-            return
+            textSurfaceObj = fontObj.render('Ring up', True, self.BLACK, self.WHITE)
         textRectObj = textSurfaceObj.get_rect()
         textRectObj.center = (0.2*phy.pixels_x,0.2*phy.pixels_y)
+        self.surface.blit(textSurfaceObj, textRectObj)
+
+        if ring_down:
+            textSurfaceObj = fontObj.render('Ringing down', True, self.BLACK, self.WHITE)
+        else:
+            textSurfaceObj = fontObj.render('Ring down', True, self.BLACK, self.WHITE)
+        textRectObj = textSurfaceObj.get_rect()
+        textRectObj.center = (0.8*phy.pixels_x,0.2*phy.pixels_y)
         
         self.surface.blit(textSurfaceObj, textRectObj)
 
