@@ -106,6 +106,12 @@ async def main():
 
         mouse = pygame.mouse.get_pos()   #use to activate things
         
+        
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                return
+
         for event in pygame.event.get():
             if event.type == 1025:
                 if mouse[0] > 40 and mouse[0] < 110 and mouse[1] > 70 and mouse[1] < 90:
@@ -131,9 +137,6 @@ async def main():
                     ring_down = not(ring_down)
                     ring_up = False
                     
-            if event.type == QUIT:
-                pygame.quit()
-                return
             
         if bell.stay_hit:
             bell.stay_angle = 1e6
