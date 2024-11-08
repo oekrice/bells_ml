@@ -6,16 +6,19 @@ Created on Thu Aug 29 10:03:56 2024
 """
 
 import asyncio
-#import nest_asyncio
+import nest_asyncio
 
 import pygame, sys
 from pygame.locals import *
 import numpy as np
+import neat
+import pickle
+import os
 
 from bell_physics import init_bell, init_physics
 from display import display_tools
 
-if False:
+if True:
     nest_asyncio.apply()
 
 pygame.init()
@@ -33,12 +36,29 @@ dp.import_images(phy, bell)
 # set up the window
 pygame.display.set_caption('Animation')
 
+class Networks():
+    def __init__(self):
+        local_dir = os.path.dirname(__file__)
+        config_path = os.path.join(local_dir, 'config_bell')
+        config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                             neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                             config_path)
+        with open('networks/ring_up', 'rb') as f:
+            up = pickle.load(f)
+        self.up = neat.nn.FeedForwardNetwork.create(up, config)
+        with open('networks/ring_down', 'rb') as f:
+            down = pickle.load(f)
+        self.down = neat.nn.FeedForwardNetwork.create(down, config)
+        
 async def main():
     
     fpsClock = pygame.time.Clock()
 
     wheel_force = 600   #force on the rope (in Newtons)
     count = 0
+    ring_up = False; ring_down = False
+
+    nets = Networks()
     while True: # the main game loop
     
         dp.surface.fill(dp.WHITE)
@@ -52,6 +72,7 @@ async def main():
 
         dp.display_stroke(phy, bell)   #Displays the text 'handstroke' or 'backstroke'
     
+        dp.display_state(phy, ring_up, ring_down)
         #Check for sound
         if bell.ding == True:
         #if abs(bell.bell_angle) > bell.sound_angle and abs(bell.prev_angle) <= bell.sound_angle:
@@ -72,8 +93,29 @@ async def main():
         else:
             bell.wheel_force = 0.0
             
-        #Check for quit
+        if ring_up:
+            inputs = bell.get_scaled_state()
+            action = nets.up.activate(inputs)
+            force = action[0]
+            bell.wheel_force = bell.wheel_force + force*bell.effect_force*wheel_force
+        if ring_down:
+            inputs = bell.get_scaled_state()
+            action = nets.down.activate(inputs)
+            force = action[0]
+            bell.wheel_force = bell.wheel_force + force*bell.effect_force*wheel_force
+
+
+        #Check for actions
         for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_u:
+                    ring_up = not(ring_up)
+                    ring_down = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_d:
+                    ring_down = not(ring_down)
+                    ring_up = False
+                    
             if event.type == QUIT:
                 pygame.quit()
                 return

@@ -255,9 +255,9 @@ class init_bell:
                 self.max_length = self.rlengths[-1]
                 
         #Adjust time step to match reality
-        dt = time.time() - phy.time_reference  
-        phy.time_reference = time.time()
-        phy.dt = min(dt, 0.1)
+        #dt = time.time() - phy.time_reference  
+        #phy.time_reference = time.time()
+        #phy.dt = min(dt, 0.1)
         
     def ropelength(self):
         #Outputs the length of the rope above the garter hole, relative to the minimum.
@@ -284,3 +284,7 @@ class init_bell:
                     
         return length, effect_force
         
+    def get_scaled_state(self):
+        """Get full system state, scaled into [0,1]."""
+        """Angle then velocity (obviously veclotiy can be large)"""
+        return [self.bell_angle/(np.pi + self.stay_angle), self.velocity/(1.0)]

@@ -51,6 +51,20 @@ class display_tools():
         
         self.surface.blit(textSurfaceObj, textRectObj)
 
+    def display_state(self, phy, ring_up, ring_down):
+        #Display 'handstroke' or 'backstroke'
+        fontObj = pygame.font.Font(pygame.font.match_font('arial'), 16)
+        if ring_up:
+            textSurfaceObj = fontObj.render('Ringing up', True, self.BLACK, self.WHITE)
+        elif ring_down:
+            textSurfaceObj = fontObj.render('Ringing down', True, self.BLACK, self.WHITE)
+        else:
+            return
+        textRectObj = textSurfaceObj.get_rect()
+        textRectObj.center = (0.2*phy.pixels_x,0.2*phy.pixels_y)
+        
+        self.surface.blit(textSurfaceObj, textRectObj)
+
     def draw_bell(self, phy, bell):
         #Roate the bell image and paste
         wheel_rot, (x_box, y_box) = phy.rotate(self.wheelimg, bell.bell_angle)
