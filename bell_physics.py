@@ -180,7 +180,7 @@ class init_bell:
             # Velocity timestep (forward Euler)
             self.velocity = self.velocity + self.accel * phy.dt
             # extra friction so it actually stops at some point
-            if abs(self.velocity) < 0.01 and self.wheel_force == 0.0  and self.bell_angle >= np.pi:
+            if abs(self.velocity) < 0.01 and self.wheel_force == 0.0 and self.bell_angle >= np.pi:
                 self.velocity = 0.5 * self.velocity
             if abs(self.bell_angle) < 1e-4 and abs(self.velocity) < 0.01:
                 self.velocity = 0.5 * self.velocity
@@ -352,43 +352,43 @@ class init_bell:
             max_angle = np.max(np.abs(self.bell_angles))
             max_travel = np.pi + self.stay_angle
 
-            #Penalise for amount of time pulling?
-            forcetime = max(np.sum([np.array(self.forces) > 10])/len(self.forces), 0.5)
+            # Penalise for amount of time pulling?
+            forcetime = max(np.sum([np.array(self.forces) > 10]) / len(self.forces), 0.5)
             alpha = 4
-            return np.sum(absangles**alpha/max_travel**alpha) / (len(np.array(self.bell_angles)) * (self.stay_hit + 1))
+            return np.sum(absangles**alpha / max_travel**alpha) / (len(np.array(self.bell_angles)) * (self.stay_hit + 1))
 
         if True:  # RINGING UP WITH STAY HITS PENALISED
             angle_aim = np.pi
             absangles = np.array(np.abs(self.bell_angles))
             max_travel = np.pi + self.stay_angle
             alpha = 4
-            return np.sum(np.array(self.bell_angles) ** alpha / max_travel**alpha) / len(np.array(self.bell_angles)) / (self.stay_hit + 1)**2
+            return (
+                np.sum(np.array(self.bell_angles) ** alpha / max_travel**alpha)
+                / len(np.array(self.bell_angles))
+                / (self.stay_hit + 1) ** 2
+            )
 
     def fitness_increment(self, phy):
         """Fitness function at a given time rather than evaulating after the fact"""
         """Must multiply by dt/tmax or equivalent"""
-        mult = 60.0*phy.FPS
-        if True:  #RINGING DOWN
+        mult = 60.0 * phy.FPS
+        if True:  # RINGING DOWN
             if np.abs(self.bell_angle) > np.pi:
-                #Bell is over the balance
+                # Bell is over the balance
                 over_balance = True
             else:
                 over_balance = False
-        force_fraction = 0.1 #How much to care about the force applied at each stroke
-        alpha = 4  #Distance factor
+        force_fraction = 0.1  # How much to care about the force applied at each stroke
+        alpha = 4  # Distance factor
         if over_balance:
-            fitness_increment = 0.5*(1.0 - ((np.abs(self.bell_angle) - np.pi)/self.stay_angle))   #Encourage to ring to the balance
+            fitness_increment = 0.5 * (
+                1.0 - ((np.abs(self.bell_angle) - np.pi) / self.stay_angle)
+            )  # Encourage to ring to the balance
         else:
-            downness = (1.0 - np.abs(self.bell_angle)/np.pi)**alpha
-            forceness = (1.0 - self.pull)**alpha
-            fitness_increment = force_fraction*forceness + (1.0 - force_fraction)*downness
+            downness = (1.0 - np.abs(self.bell_angle) / np.pi) ** alpha
+            forceness = (1.0 - self.pull) ** alpha
+            fitness_increment = force_fraction * forceness + (1.0 - force_fraction) * downness
 
-        fitness_increment = fitness_increment/(self.stay_hit + 1)
+        fitness_increment = fitness_increment / (self.stay_hit + 1)
 
-        return fitness_increment/mult
-
-
-
-
-
-
+        return fitness_increment / mult
