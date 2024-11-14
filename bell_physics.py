@@ -101,7 +101,7 @@ class init_bell:
         self.volume_ref = 0.0
         self.clapper_friction = 0.1 * self.friction
         self.stay_hit = False
-        self.stay_break_limit = 0.5
+        self.stay_break_limit = 1.0
 
         self.bell_angles = []
         self.forces = []

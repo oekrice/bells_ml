@@ -96,6 +96,8 @@ async def main():
     ring_up = False
     ring_down = False
 
+    dp.surface.fill(dp.WHITE)
+
     while True:  # the main game loop
 
         # Check for inputs that affect the timestep
@@ -130,15 +132,18 @@ async def main():
         phy.count = phy.count + 1
 
         if count % refresh_rate == 0:
+
             dp.surface.fill(dp.WHITE)
 
             dp.draw_rope(phy, bell)
 
-            dp.display_stroke(phy, bell)  # Displays the text 'handstroke' or 'backstroke'
+            if count % refresh_rate * 3 == 0:
 
-            dp.display_state(phy, ring_up, ring_down)
+                dp.display_stroke(phy, bell)  # Displays the text 'handstroke' or 'backstroke'
 
-            dp.display_force(phy, bell.wheel_force)
+                dp.display_state(phy, ring_up, ring_down)
+
+                dp.display_force(phy, bell.wheel_force)
 
             dp.draw_bell(phy, bell)
 
