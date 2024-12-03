@@ -35,17 +35,6 @@ pygame.init()
 phy = init_physics()
 bell = init_bell(phy, 0.0)
 
-if random.random() < 0.0:  # pick a random angle
-    bell.bell_angle = uniform(-np.pi - bell.stay_angle, np.pi + bell.stay_angle)
-    bell.clapper_angle = bell.bell_angle
-else:
-    if random.random() < 0.0:  # important that it can get itself off at hand and back
-        bell.bell_angle = uniform(np.pi + 0.95 * bell.stay_angle, np.pi + bell.stay_angle)
-        bell.clapper_angle = bell.bell_angle + bell.clapper_limit - 0.01
-    else:
-        bell.bell_angle = uniform(-np.pi - 0.95 * bell.stay_angle, -np.pi - bell.stay_angle)
-        bell.clapper_angle = bell.bell_angle - bell.clapper_limit + 0.01
-
 bell.bell_angle = 0.0
 bell.clapper_angle = 0.0
 
